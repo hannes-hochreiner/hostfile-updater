@@ -10,4 +10,6 @@ publish = false
 [dependencies]
 anyhow = "1.0.70"
 clap = { version = "4.1.13", features = ["derive"] }
+serde = { version = "1.0.158", features = ["derive"] }
 thiserror = "1.0.40"
+toml = "0.7.3"

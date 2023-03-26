@@ -1,8 +1,11 @@
 /// hostfile updater
 /// CLI tool to update hostfiles (i.e., add and remove entries).
 use clap::{Parser, Subcommand};
-use hostfile_updater;
-use std::io::{self, Read, Write};
+use hostfile_updater::{self, config::Config};
+use std::{
+    fs,
+    io::{self, Read, Write},
+};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -16,8 +19,12 @@ struct Hu {
 enum Commands {
     /// Adds entry
     Add { address: String, hostname: String },
+    /// Adds entries from configuration
+    AddConfig { config_file: String },
     /// Removes entry
     Remove { address: String, hostname: String },
+    /// Removes entries from configuration
+    RemoveConfig { config_file: String },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -32,8 +39,26 @@ fn main() -> anyhow::Result<()> {
         Commands::Add { address, hostname } => {
             hf.add(address, hostname);
         }
+        Commands::AddConfig { config_file } => {
+            let config: Config = toml::from_str(&fs::read_to_string(&config_file)?)?;
+
+            for address in &config.addresses {
+                for hostname in &config.hostnames {
+                    hf.add(address, hostname);
+                }
+            }
+        }
         Commands::Remove { address, hostname } => {
             hf.remove(address, hostname);
+        }
+        Commands::RemoveConfig { config_file } => {
+            let config: Config = toml::from_str(&fs::read_to_string(&config_file)?)?;
+
+            for address in &config.addresses {
+                for hostname in &config.hostnames {
+                    hf.remove(address, hostname);
+                }
+            }
         }
     }
 

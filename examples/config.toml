@@ -1,0 +1,2 @@
+addresses = ["127.0.0.1", "::1"]
+hostnames = ["test test.localdomain"]
