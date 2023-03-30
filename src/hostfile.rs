@@ -59,22 +59,31 @@ impl Hostfile {
         lines.join("\n")
     }
 
-    pub fn add(&mut self, address: &str, hostname: &str) {
+    pub fn add(&mut self, address: &str, hostnames: &Vec<&str>) {
         match self.entries.get_mut(address) {
             Some(hs) => {
-                hs.insert(hostname.to_string());
+                for host in hostnames {
+                    hs.insert(host.to_string());
+                }
             }
             None => {
-                self.entries
-                    .insert(address.to_string(), HashSet::from([hostname.to_string()]));
+                self.entries.insert(
+                    address.to_string(),
+                    hostnames
+                        .iter()
+                        .map(|&s| String::from(s))
+                        .collect::<HashSet<String>>(),
+                );
             }
         }
     }
 
-    pub fn remove(&mut self, address: &str, hostname: &str) {
+    pub fn remove(&mut self, address: &str, hostnames: &Vec<&str>) {
         match self.entries.get_mut(address) {
             Some(hs) => {
-                hs.remove(hostname);
+                for &host in hostnames {
+                    hs.remove(host);
+                }
             }
             _ => {}
         }
@@ -135,7 +144,7 @@ mod test {
         let input = "# comment line\n127.0.0.1\tlocalhost  localhost.localdomain\n";
         let mut hf = Hostfile::new_from_str(&input).unwrap();
 
-        hf.add("192.168.0.1", "test.localdomain");
+        hf.add("192.168.0.1", &vec!["test.localdomain"]);
 
         assert_eq!(
             hf.to_string(),
@@ -148,8 +157,24 @@ mod test {
         let input = "# comment line\n127.0.0.1\tlocalhost  localhost.localdomain\n192.168.0.10 test.localdomain";
         let mut hf = Hostfile::new_from_str(&input).unwrap();
 
-        hf.remove("192.168.0.10", "test.localdomain");
+        hf.remove("192.168.0.10", &vec!["test.localdomain"]);
 
         assert_eq!(hf.to_string(), "127.0.0.1 localhost localhost.localdomain",);
+    }
+
+    #[test]
+    fn test_multiple() {
+        let input = "# comment line\n127.0.0.1\tlocalhost  localhost.localdomain\n";
+        let mut hf = Hostfile::new_from_str(&input).unwrap();
+
+        hf.add(
+            "192.168.0.1",
+            &vec!["test1.localdomain", "test2.localdomain"],
+        );
+
+        assert_eq!(
+            hf.to_string(),
+            "127.0.0.1 localhost localhost.localdomain\n192.168.0.1 test1.localdomain test2.localdomain",
+        );
     }
 }

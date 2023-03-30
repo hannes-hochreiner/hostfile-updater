@@ -1,11 +1,8 @@
-/// hostfile updater
-/// CLI tool to update hostfiles (i.e., add and remove entries).
+//! hostfile updater
+//! CLI tool to update hostfiles (i.e., add and remove entries).
 use clap::{Parser, Subcommand};
-use hostfile_updater::{self, config::Config};
-use std::{
-    fs,
-    io::{self, Read, Write},
-};
+use hostfile_updater::{self};
+use std::io::{self, Read, Write};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -17,14 +14,16 @@ struct Hu {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Adds entry
-    Add { address: String, hostname: String },
-    /// Adds entries from configuration
-    AddConfig { config_file: String },
-    /// Removes entry
-    Remove { address: String, hostname: String },
-    /// Removes entries from configuration
-    RemoveConfig { config_file: String },
+    /// Adds entries
+    Add {
+        addresses: String,
+        hostnames: String,
+    },
+    /// Removes entries
+    Remove {
+        addresses: String,
+        hostnames: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -36,28 +35,24 @@ fn main() -> anyhow::Result<()> {
     let mut hf = hostfile_updater::hostfile::Hostfile::new_from_str(&String::from_utf8(buffer)?)?;
 
     match &hu.command {
-        Commands::Add { address, hostname } => {
-            hf.add(address, hostname);
-        }
-        Commands::AddConfig { config_file } => {
-            let config: Config = toml::from_str(&fs::read_to_string(&config_file)?)?;
+        Commands::Add {
+            addresses,
+            hostnames,
+        } => {
+            let hostnames: Vec<&str> = hostnames.split(',').collect();
 
-            for address in &config.addresses {
-                for hostname in &config.hostnames {
-                    hf.add(address, hostname);
-                }
+            for address in addresses.split(',') {
+                hf.add(address, &hostnames);
             }
         }
-        Commands::Remove { address, hostname } => {
-            hf.remove(address, hostname);
-        }
-        Commands::RemoveConfig { config_file } => {
-            let config: Config = toml::from_str(&fs::read_to_string(&config_file)?)?;
+        Commands::Remove {
+            addresses,
+            hostnames,
+        } => {
+            let hostnames: Vec<&str> = hostnames.split(',').collect();
 
-            for address in &config.addresses {
-                for hostname in &config.hostnames {
-                    hf.remove(address, hostname);
-                }
+            for address in addresses.split(',') {
+                hf.remove(address, &hostnames);
             }
         }
     }

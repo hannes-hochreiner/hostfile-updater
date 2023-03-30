@@ -16,11 +16,8 @@ hostfile-updater -h
 ```nu
 open /etc/hosts | hostfile-updater add 192.168.0.1 test.localdomain | sudo save /etc/hosts
 ```
-### Add all combinations from a configuration file
-```toml
-addresses = ["127.0.0.1", "::1"]
-hostnames = ["test test.localdomain"]
-```
+
+### Add multiple entries
 ```nu
-open /etc/hosts | hostfile-updater add-config ./examples/config.toml | sudo save /etc/hosts
+open /etc/hosts | hostfile-updater add 192.168.0.1,::1 test1.localdomain,test2.localdomain | sudo save /etc/hosts
 ```
