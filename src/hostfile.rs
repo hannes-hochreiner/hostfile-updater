@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -18,14 +21,14 @@ impl Hostfile {
         for line in data.split('\n') {
             let line = line.trim();
 
-            if line.starts_with("#") || line.is_empty() {
+            if line.starts_with('#') || line.is_empty() {
                 continue;
             }
 
             let mut tokens = line.split_whitespace();
             let address = tokens
                 .next()
-                .ok_or(HostfileError::NoAddressFound(line.to_string()))?
+                .ok_or_else(|| HostfileError::NoAddressFound(line.to_string()))?
                 .to_string();
             let hostnames = tokens.map(|s| s.to_owned());
 
@@ -40,23 +43,6 @@ impl Hostfile {
         }
 
         Ok(Hostfile { entries })
-    }
-
-    pub fn to_string(&self) -> String {
-        let mut lines = self
-            .entries
-            .iter()
-            .map(|(k, v)| {
-                let mut hostnames = v.iter().map(|s| s.to_owned()).collect::<Vec<String>>();
-
-                hostnames.sort();
-
-                format!("{} {}", k, hostnames.join(" "))
-            })
-            .collect::<Vec<String>>();
-
-        lines.sort();
-        lines.join("\n")
     }
 
     pub fn add(&mut self, address: &str, hostnames: &Vec<&str>) {
@@ -79,20 +65,17 @@ impl Hostfile {
     }
 
     pub fn remove(&mut self, address: &str, hostnames: &Vec<&str>) {
-        match self.entries.get_mut(address) {
-            Some(hs) => {
-                for &host in hostnames {
-                    hs.remove(host);
-                }
+        if let Some(hs) = self.entries.get_mut(address) {
+            for &host in hostnames {
+                hs.remove(host);
             }
-            _ => {}
         }
 
         let empty_entries: Vec<String> = self
             .entries
             .iter()
             .filter_map(|e| {
-                if e.1.len() == 0 {
+                if e.1.is_empty() {
                     Some(e.0.to_owned())
                 } else {
                     None
@@ -103,6 +86,25 @@ impl Hostfile {
         for ee in empty_entries {
             self.entries.remove(&ee);
         }
+    }
+}
+
+impl Display for Hostfile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut lines = self
+            .entries
+            .iter()
+            .map(|(k, v)| {
+                let mut hostnames = v.iter().map(|s| s.to_owned()).collect::<Vec<String>>();
+
+                hostnames.sort();
+
+                format!("{} {}", k, hostnames.join(" "))
+            })
+            .collect::<Vec<String>>();
+
+        lines.sort();
+        write!(f, "{}", lines.join("\n"))
     }
 }
 
