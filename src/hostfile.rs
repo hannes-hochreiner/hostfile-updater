@@ -15,10 +15,10 @@ pub struct Hostfile {
 }
 
 impl Hostfile {
-    pub fn new_from_str(data: &str) -> Result<Self, HostfileError> {
+    pub fn new_from_str<S: AsRef<str>>(data: S) -> Result<Self, HostfileError> {
         let mut entries: HashMap<String, HashSet<String>> = HashMap::new();
 
-        for line in data.split('\n') {
+        for line in data.as_ref().split('\n') {
             let line = line.trim();
 
             if line.starts_with('#') || line.is_empty() {
@@ -45,11 +45,13 @@ impl Hostfile {
         Ok(Hostfile { entries })
     }
 
-    pub fn add(&mut self, address: &str, hostnames: &Vec<&str>) {
+    pub fn add<S: AsRef<str>>(&mut self, address: S, hostnames: &[S]) {
+        let address = address.as_ref();
+
         match self.entries.get_mut(address) {
             Some(hs) => {
                 for host in hostnames {
-                    hs.insert(host.to_string());
+                    hs.insert(host.as_ref().to_string());
                 }
             }
             None => {
@@ -57,17 +59,19 @@ impl Hostfile {
                     address.to_string(),
                     hostnames
                         .iter()
-                        .map(|&s| String::from(s))
+                        .map(|s| String::from(s.as_ref()))
                         .collect::<HashSet<String>>(),
                 );
             }
         }
     }
 
-    pub fn remove(&mut self, address: &str, hostnames: &Vec<&str>) {
+    pub fn remove<S: AsRef<str>>(&mut self, address: S, hostnames: &[S]) {
+        let address = address.as_ref();
+
         if let Some(hs) = self.entries.get_mut(address) {
-            for &host in hostnames {
-                hs.remove(host);
+            for host in hostnames {
+                hs.remove(host.as_ref());
             }
         }
 
