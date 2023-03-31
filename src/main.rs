@@ -1,5 +1,3 @@
-//! hostfile updater
-//! CLI tool to update hostfiles (i.e., add and remove entries).
 use clap::{Parser, Subcommand};
 use hostfile_updater::{self};
 use std::io::{self, Read, Write};
@@ -14,12 +12,12 @@ struct Hu {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Adds entries
+    /// Adds entries (comma-separated)
     Add {
         addresses: String,
         hostnames: String,
     },
-    /// Removes entries
+    /// Removes entries (comma-separated)
     Remove {
         addresses: String,
         hostnames: String,
